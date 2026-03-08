@@ -80,73 +80,63 @@ export function QuizPdfSection({
     const quizItems: QuizItem[] = shuffled.map((x) => ({ word: x.word, phrase: x.phrase, answer: x.answer }));
 
     setLoading(true);
-    let container: HTMLDivElement | null = null;
+    let iframe: HTMLIFrameElement | null = null;
     try {
       await ensureNanumGothic();
 
-      container = document.createElement("div");
-      container.setAttribute("aria-hidden", "true");
-      container.style.cssText = [
-        "position:fixed",
-        "left:0",
-        "top:0",
-        "width:794px",
-        "min-height:100px",
-        "background:#fff",
-        "font-family:'Nanum Gothic',sans-serif",
-        "padding:24px",
-        "box-sizing:border-box",
-        "opacity:0",
-        "pointer-events:none",
-        "z-index:-1",
-      ].join(";");
+      iframe = document.createElement("iframe");
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.style.cssText =
+        "position:fixed;left:0;top:0;width:794px;height:1200px;border:0;opacity:0;pointer-events:none;z-index:-1;";
+      document.body.appendChild(iframe);
 
-      const title = document.createElement("h1");
-      title.textContent = "WordSnap 퀴즈";
-      title.style.cssText = "margin:0 0 20px 0; font-size:22px; font-weight:bold;";
-      container.appendChild(title);
+      const doc = iframe.contentDocument;
+      if (!doc) throw new Error("iframe document not ready");
 
-      const grid = document.createElement("div");
-      grid.style.cssText =
-        "display:grid; grid-template-columns: 1fr 1fr; gap: 28px 32px; margin-top: 8px;";
-      quizItems.forEach((q, i) => {
-        const cell = document.createElement("div");
-        cell.style.cssText = "font-size: 13px; line-height: 1.5;";
-        cell.innerHTML = [
-          `<strong>Q${i + 1}. [${escapeHtml(q.word)}]</strong>`,
-          escapeHtml(q.phrase),
-          "한글 뜻: _______________________",
-        ].join("<br/>");
-        grid.appendChild(cell);
-      });
-      container.appendChild(grid);
-      document.body.appendChild(container);
+      const gridHtml = quizItems
+        .map(
+          (q, i) =>
+            `<div style="font-size:13px;line-height:1.5;color:#111;">` +
+            `<strong>Q${i + 1}. [${escapeHtml(q.word)}]</strong><br/>` +
+            `${escapeHtml(q.phrase)}<br/>한글 뜻: _______________________</div>`
+        )
+        .join("");
 
-      await new Promise((r) => {
-        requestAnimationFrame(() => setTimeout(r, 150));
-      });
+      doc.open();
+      doc.write(
+        `<!DOCTYPE html><html><head><meta charset="utf-8">` +
+          `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&display=swap">` +
+          `</head><body style="margin:0;padding:24px;background:#ffffff;color:#111111;font-family:'Nanum Gothic',sans-serif;box-sizing:border-box;">` +
+          `<h1 style="margin:0 0 20px 0;font-size:22px;font-weight:bold;color:#111;">WordSnap 퀴즈</h1>` +
+          `<div style="display:grid;grid-template-columns:1fr 1fr;gap:28px 32px;margin-top:8px;">${gridHtml}</div>` +
+          `</body></html>`
+      );
+      doc.close();
 
-      const canvas = await html2canvas(container, {
+      await new Promise((r) => setTimeout(r, 400));
+
+      const target = doc.body;
+      const canvas = await html2canvas(target, {
         scale: SCALE,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
       });
-      if (container.parentNode) container.parentNode.removeChild(container);
-      container = null;
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      iframe = null;
 
       if (!canvas || canvas.width === 0 || canvas.height === 0) {
         throw new Error("캔버스 생성 실패");
       }
 
-      const doc = new jsPDF({ unit: "mm" });
+      const pdfDoc = new jsPDF({ unit: "mm" });
       const imgW = canvas.width;
       const imgH = canvas.height;
       const wMm = A4_MM.w;
       let drawn = 0;
 
       while (drawn < imgH) {
-        if (drawn > 0) doc.addPage();
+        if (drawn > 0) pdfDoc.addPage();
         const sliceH = Math.min(A4_HEIGHT_PX, imgH - drawn);
         const sliceCanvas = document.createElement("canvas");
         sliceCanvas.width = imgW;
@@ -159,17 +149,17 @@ export function QuizPdfSection({
         }
         const hMm = (sliceH / imgW) * wMm;
         const dataUrl = sliceCanvas.toDataURL("image/jpeg", 0.92);
-        doc.addImage(dataUrl, "JPEG", 0, 0, wMm, hMm);
+        pdfDoc.addImage(dataUrl, "JPEG", 0, 0, wMm, hMm);
         drawn += sliceH;
       }
 
-      doc.save("wordsnap-quiz.pdf");
+      pdfDoc.save("wordsnap-quiz.pdf");
     } catch (err) {
       console.error("PDF 생성 실패:", err);
       const msg = err instanceof Error ? err.message : String(err);
       alert(`PDF 생성 중 오류가 났습니다. 다시 시도해 주세요. (${msg})`);
     } finally {
-      if (container?.parentNode) container.parentNode.removeChild(container);
+      if (iframe?.parentNode) iframe.parentNode.removeChild(iframe);
       setLoading(false);
     }
   };
