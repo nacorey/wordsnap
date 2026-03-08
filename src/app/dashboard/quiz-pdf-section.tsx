@@ -36,7 +36,7 @@ function escapeHtml(s: string): string {
 /** 나눔고딕 폰트 로드 후 resolve */
 function ensureNanumGothic(): Promise<void> {
   const id = "pdf-nanum-gothic";
-  if (document.getElementById(id)) return document.fonts.ready;
+  if (document.getElementById(id)) return document.fonts.ready.then(() => {});
   const link = document.createElement("link");
   link.id = id;
   link.rel = "stylesheet";
