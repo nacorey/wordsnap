@@ -87,7 +87,7 @@ export function QuizPdfSection({
       iframe = document.createElement("iframe");
       iframe.setAttribute("aria-hidden", "true");
       iframe.style.cssText =
-        "position:fixed;left:0;top:0;width:794px;height:1200px;border:0;opacity:0;pointer-events:none;z-index:-1;";
+        "position:fixed;left:0;top:0;width:794px;min-height:100px;border:0;opacity:0;pointer-events:none;z-index:-1;";
       document.body.appendChild(iframe);
 
       const doc = iframe.contentDocument;
@@ -114,6 +114,11 @@ export function QuizPdfSection({
       doc.close();
 
       await new Promise((r) => setTimeout(r, 400));
+
+      const contentHeight = doc.body.scrollHeight || doc.body.offsetHeight || 400;
+      iframe.style.height = `${contentHeight + 24}px`;
+
+      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 50)));
 
       const target = doc.body;
       const canvas = await html2canvas(target, {
