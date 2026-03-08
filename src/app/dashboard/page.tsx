@@ -36,6 +36,9 @@ export default async function DashboardPage() {
           <p className="text-sm text-muted-foreground">
             이미지를 업로드하면 AI가 핵심 단어와 콜로케이션을 만들어 저장합니다.
           </p>
+          <p className="mt-2 text-base text-muted-foreground">
+            매일 조금씩 성장하는 예윤을 응원합니다.
+          </p>
         </section>
 
         <DashboardUpload />
