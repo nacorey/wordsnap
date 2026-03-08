@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Header } from "@/components/header";
+import { isAllowedUser } from "@/lib/allowed-user";
 import {
   VocabularyCard,
   type VocabularyWithScan,
@@ -18,6 +19,11 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
+  const allowed = await isAllowedUser(supabase, user);
+  if (!allowed) {
+    redirect("/enter-code");
+  }
+
   const { data: rows } = await supabase
     .from("vocabularies")
     .select("id, word, data, created_at, scans(created_at, image_url)")
@@ -31,11 +37,8 @@ export default async function DashboardPage() {
       <main className="container mx-auto flex-1 px-4 py-8">
         <section className="mb-10">
           <h1 className="mb-2 text-2xl font-semibold text-foreground">
-            내 단어장
+            하루 한 번씩, 쌓이면 능력이 됩니다
           </h1>
-          <p className="text-sm text-muted-foreground">
-            이미지를 업로드하면 AI가 핵심 단어와 콜로케이션을 만들어 저장합니다.
-          </p>
           <p className="mt-2 text-base text-muted-foreground">
             매일 조금씩 성장하는 예윤을 응원합니다.
           </p>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import type { AnalyzeWordItem, CollocationItem } from "@/lib/analyze-types";
+import { isAllowedUser } from "@/lib/allowed-user";
 import { createClient } from "@/lib/supabase/server";
 
 const WORDS_SYSTEM_PROMPT = `You are an English vocabulary and collocation expert. Given a list of English words, for EACH word provide:
@@ -33,6 +34,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "로그인이 필요합니다." },
         { status: 401 }
+      );
+    }
+
+    const allowed = await isAllowedUser(supabase, user);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "가입 코드를 먼저 입력해 주세요." },
+        { status: 403 }
       );
     }
 
