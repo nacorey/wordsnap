@@ -1,0 +1,198 @@
+import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
+import type { AnalyzeWordItem } from "@/lib/analyze-types";
+import { createClient } from "@/lib/supabase/server";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const STORAGE_BUCKET = "scans";
+
+const SYSTEM_PROMPT = `You are an English vocabulary and collocation expert. Your task is to analyze an image that contains English text (e.g. from a book, article, or newsletter).
+
+Do the following in one response:
+1. Extract and read all text visible in the image (OCR).
+2. From that text, select 3–5 key words that are most valuable for learners (prioritize verbs, nouns, adjectives, and useful phrases—e.g. verb+noun, adjective+noun collocations).
+3. For each selected word, provide:
+   - word: the target word (exactly as it appears or in base form)
+   - collocations: exactly 3 common collocations (phrases or word combinations native speakers often use with this word)
+   - examples: exactly 2 natural, realistic example sentences that a native might say or write (using the word or its collocations)
+
+Respond only with valid JSON in this exact shape, no markdown or extra text:
+{
+  "words": [
+    {
+      "word": "target word",
+      "collocations": ["collocation 1", "collocation 2", "collocation 3"],
+      "examples": ["Example sentence 1.", "Example sentence 2."]
+    }
+  ]
+}`;
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "OPENAI_API_KEY is not configured." },
+        { status: 500 }
+      );
+    }
+
+    const formData = await request.formData();
+    const file = formData.get("image") as File | null;
+    if (!file || !file.size) {
+      return NextResponse.json(
+        { error: "No image provided. Send a form field named 'image'." },
+        { status: 400 }
+      );
+    }
+
+    const type = file.type;
+    if (!type.startsWith("image/")) {
+      return NextResponse.json(
+        { error: "File must be an image (e.g. image/jpeg, image/png)." },
+        { status: 400 }
+      );
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    const dataUrl = `data:${type};base64,${base64}`;
+
+    // 1) 이미지를 Supabase Storage에 업로드
+    const ext = file.name.split(".").pop() || "jpg";
+    const storagePath = `${user.id}/${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(storagePath, arrayBuffer, {
+        contentType: type,
+        upsert: false,
+      });
+    let imageUrl = "";
+    if (uploadError) {
+      console.warn("[api/analyze] Storage upload failed:", uploadError);
+      // 업로드 실패해도 분석은 진행 (image_url 빈 값으로 scan 저장)
+    } else {
+      const { data: urlData } = supabase.storage
+        .from(STORAGE_BUCKET)
+        .getPublicUrl(storagePath);
+      imageUrl = urlData.publicUrl;
+    }
+
+    // 2) scans 테이블에 기록 (image_url 없으면 빈 문자열)
+    const { data: scanRow, error: scanError } = await supabase
+      .from("scans")
+      .insert({ user_id: user.id, image_url: imageUrl || "" })
+      .select("id")
+      .single();
+    if (scanError || !scanRow) {
+      console.error("[api/analyze] Scan insert failed:", scanError);
+      return NextResponse.json(
+        { error: "스캔 저장에 실패했습니다." },
+        { status: 500 }
+      );
+    }
+    const scanId = scanRow.id;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Analyze this image and return the JSON with key words, collocations, and examples as specified.",
+            },
+            {
+              type: "image_url",
+              image_url: { url: dataUrl },
+            },
+          ],
+        },
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 4096,
+    });
+
+    const raw = completion.choices[0]?.message?.content;
+    if (!raw) {
+      return NextResponse.json(
+        { error: "No content in model response." },
+        { status: 502 }
+      );
+    }
+
+    const parsed = JSON.parse(raw) as { words?: unknown[] };
+    if (!Array.isArray(parsed.words)) {
+      return NextResponse.json(
+        { error: "Invalid response shape: missing or invalid 'words' array." },
+        { status: 502 }
+      );
+    }
+
+    const words: AnalyzeWordItem[] = parsed.words
+      .map((item) => {
+        if (!item || typeof item !== "object") return null;
+        const o = item as Record<string, unknown>;
+        const word = typeof o.word === "string" ? o.word : "";
+        const collocations = Array.isArray(o.collocations)
+          ? o.collocations.filter((c): c is string => typeof c === "string")
+          : [];
+        const examples = Array.isArray(o.examples)
+          ? o.examples.filter((e): e is string => typeof e === "string")
+          : [];
+        if (!word) return null;
+        return {
+          word,
+          collocations: [
+            collocations[0] ?? "",
+            collocations[1] ?? "",
+            collocations[2] ?? "",
+          ] as [string, string, string],
+          examples: [examples[0] ?? "", examples[1] ?? ""] as [string, string],
+        };
+      })
+      .filter((w): w is AnalyzeWordItem => w !== null);
+
+    // 3) vocabularies 테이블에 단어별 저장 (data: { collocations, examples })
+    if (words.length > 0) {
+      const rows = words.map((w) => ({
+        scan_id: scanId,
+        word: w.word,
+        data: { collocations: w.collocations, examples: w.examples },
+      }));
+      const { error: vocabError } = await supabase
+        .from("vocabularies")
+        .insert(rows);
+      if (vocabError) {
+        console.error("[api/analyze] Vocabularies insert failed:", vocabError);
+        // 저장 실패해도 분석 결과는 반환
+      }
+    }
+
+    // 응답: { word, collocations, examples }를 포함한 JSON 배열
+    return NextResponse.json(words satisfies AnalyzeWordItem[]);
+  } catch (err) {
+    console.error("[api/analyze]", err);
+    const message = err instanceof Error ? err.message : "Analysis failed.";
+    return NextResponse.json(
+      { error: message },
+      { status: 500 }
+    );
+  }
+}
