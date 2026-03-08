@@ -6,6 +6,7 @@ import {
   type VocabularyWithScan,
 } from "./vocabulary-card";
 import { DashboardUpload } from "./dashboard-upload";
+import { QuizPdfSection } from "./quiz-pdf-section";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -38,6 +39,8 @@ export default async function DashboardPage() {
         </section>
 
         <DashboardUpload />
+
+        <QuizPdfSection vocabularies={vocabularies} />
 
         <section className="mt-10">
           <h2 className="mb-4 text-lg font-medium text-foreground">

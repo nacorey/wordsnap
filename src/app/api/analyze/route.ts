@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import type { AnalyzeWordItem } from "@/lib/analyze-types";
+import type { AnalyzeWordItem, CollocationItem } from "@/lib/analyze-types";
 import { createClient } from "@/lib/supabase/server";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 const STORAGE_BUCKET = "scans";
 
@@ -16,7 +12,7 @@ Do the following in one response:
 2. From that text, select 3–5 key words that are most valuable for learners (prioritize verbs, nouns, adjectives, and useful phrases—e.g. verb+noun, adjective+noun collocations).
 3. For each selected word, provide:
    - word: the target word (exactly as it appears or in base form)
-   - collocations: exactly 3 common collocations (phrases or word combinations native speakers often use with this word)
+   - collocations: exactly 3 items. Each item must have "phrase" (the English collocation) and "meaningKo" (short Korean meaning, e.g. "정확한 측정" for "precise measurements").
    - examples: exactly 2 natural, realistic example sentences that a native might say or write (using the word or its collocations)
 
 Respond only with valid JSON in this exact shape, no markdown or extra text:
@@ -24,7 +20,11 @@ Respond only with valid JSON in this exact shape, no markdown or extra text:
   "words": [
     {
       "word": "target word",
-      "collocations": ["collocation 1", "collocation 2", "collocation 3"],
+      "collocations": [
+        {"phrase": "precise measurements", "meaningKo": "정확한 측정"},
+        {"phrase": "another phrase", "meaningKo": "한글 의미"},
+        {"phrase": "third phrase", "meaningKo": "한글 의미"}
+      ],
       "examples": ["Example sentence 1.", "Example sentence 2."]
     }
   ]
@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    const openai = new OpenAI({ apiKey });
 
     const formData = await request.formData();
     const file = formData.get("image") as File | null;
@@ -150,20 +152,26 @@ export async function POST(request: NextRequest) {
         if (!item || typeof item !== "object") return null;
         const o = item as Record<string, unknown>;
         const word = typeof o.word === "string" ? o.word : "";
-        const collocations = Array.isArray(o.collocations)
-          ? o.collocations.filter((c): c is string => typeof c === "string")
-          : [];
+        const rawColl = Array.isArray(o.collocations) ? o.collocations : [];
+        const collocations: CollocationItem[] = rawColl.slice(0, 3).map((c) => {
+          if (c && typeof c === "object" && "phrase" in c && typeof (c as Record<string, unknown>).phrase === "string")
+            return {
+              phrase: (c as Record<string, unknown>).phrase as string,
+              meaningKo: typeof (c as Record<string, unknown>).meaningKo === "string" ? (c as Record<string, unknown>).meaningKo as string : "",
+            };
+          return { phrase: typeof c === "string" ? c : "", meaningKo: "" };
+        });
         const examples = Array.isArray(o.examples)
           ? o.examples.filter((e): e is string => typeof e === "string")
           : [];
-        if (!word) return null;
+        if (!word || collocations.length === 0) return null;
         return {
           word,
           collocations: [
-            collocations[0] ?? "",
-            collocations[1] ?? "",
-            collocations[2] ?? "",
-          ] as [string, string, string],
+            collocations[0] ?? { phrase: "", meaningKo: "" },
+            collocations[1] ?? { phrase: "", meaningKo: "" },
+            collocations[2] ?? { phrase: "", meaningKo: "" },
+          ] as [CollocationItem, CollocationItem, CollocationItem],
           examples: [examples[0] ?? "", examples[1] ?? ""] as [string, string],
         };
       })

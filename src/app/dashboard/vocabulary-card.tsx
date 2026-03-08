@@ -7,13 +7,26 @@ import {
 
 type ScanInfo = { created_at: string; image_url: string };
 
+/** 콜로케이션: 레거시 문자열 또는 { phrase, meaningKo } */
+export type CollocationDisplay =
+  | string
+  | { phrase: string; meaningKo?: string };
+
 export type VocabularyWithScan = {
   id: string;
   word: string;
-  data: { collocations?: string[]; examples?: string[] };
+  data: {
+    collocations?: CollocationDisplay[];
+    examples?: string[];
+  };
   created_at: string;
   scans: ScanInfo | ScanInfo[] | null;
 };
+
+function formatCollocation(c: CollocationDisplay): string {
+  if (typeof c === "string") return c;
+  return c.meaningKo ? `${c.phrase} ${c.meaningKo}` : c.phrase;
+}
 
 function getScan(item: VocabularyWithScan): ScanInfo | null {
   const s = item.scans;
@@ -53,7 +66,7 @@ export function VocabularyCard({ item }: { item: VocabularyWithScan }) {
             </p>
             <ul className="list-inside list-disc space-y-0.5 text-sm">
               {collocations.map((c, i) => (
-                <li key={i}>{c}</li>
+                <li key={i}>{formatCollocation(c)}</li>
               ))}
             </ul>
           </div>
