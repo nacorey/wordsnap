@@ -85,15 +85,20 @@ export function QuizPdfSection({
       await ensureNanumGothic();
 
       container = document.createElement("div");
+      container.setAttribute("aria-hidden", "true");
       container.style.cssText = [
         "position:fixed",
-        "left:-9999px",
+        "left:0",
         "top:0",
         "width:794px",
+        "min-height:100px",
         "background:#fff",
         "font-family:'Nanum Gothic',sans-serif",
         "padding:24px",
         "box-sizing:border-box",
+        "opacity:0",
+        "pointer-events:none",
+        "z-index:-1",
       ].join(";");
 
       const title = document.createElement("h1");
@@ -117,6 +122,10 @@ export function QuizPdfSection({
       container.appendChild(grid);
       document.body.appendChild(container);
 
+      await new Promise((r) => {
+        requestAnimationFrame(() => setTimeout(r, 150));
+      });
+
       const canvas = await html2canvas(container, {
         scale: SCALE,
         useCORS: true,
@@ -125,6 +134,10 @@ export function QuizPdfSection({
       });
       if (container.parentNode) container.parentNode.removeChild(container);
       container = null;
+
+      if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        throw new Error("캔버스 생성 실패");
+      }
 
       const doc = new jsPDF({ unit: "mm" });
       const imgW = canvas.width;
@@ -145,14 +158,16 @@ export function QuizPdfSection({
           ctx.drawImage(canvas, 0, drawn, imgW, sliceH, 0, 0, imgW, sliceH);
         }
         const hMm = (sliceH / imgW) * wMm;
-        doc.addImage(sliceCanvas.toDataURL("image/png"), "PNG", 0, 0, wMm, hMm);
+        const dataUrl = sliceCanvas.toDataURL("image/jpeg", 0.92);
+        doc.addImage(dataUrl, "JPEG", 0, 0, wMm, hMm);
         drawn += sliceH;
       }
 
       doc.save("wordsnap-quiz.pdf");
     } catch (err) {
       console.error("PDF 생성 실패:", err);
-      alert("PDF 생성 중 오류가 났습니다. 다시 시도해 주세요.");
+      const msg = err instanceof Error ? err.message : String(err);
+      alert(`PDF 생성 중 오류가 났습니다. 다시 시도해 주세요. (${msg})`);
     } finally {
       if (container?.parentNode) container.parentNode.removeChild(container);
       setLoading(false);

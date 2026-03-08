@@ -5,15 +5,17 @@ import { createClient } from "@/lib/supabase/server";
 
 const STORAGE_BUCKET = "scans";
 
-const SYSTEM_PROMPT = `You are an English vocabulary and collocation expert. Your task is to analyze an image that contains English text (e.g. from a book, article, or newsletter).
+const SYSTEM_PROMPT = `You are an English vocabulary and collocation expert. Your task is to analyze an image that contains English text (e.g. from a book, article, newsletter, or PDF).
 
 Do the following in one response:
-1. Extract and read all text visible in the image (OCR).
-2. From that text, select 3–5 key words that are most valuable for learners (prioritize verbs, nouns, adjectives, and useful phrases—e.g. verb+noun, adjective+noun collocations).
-3. For each selected word, provide:
-   - word: the target word (exactly as it appears or in base form)
+1. OCR: Extract and read ALL English text visible in the image. Do not skip or omit any word or phrase.
+2. From that full text, list every word or short phrase that is useful for learners. Include ALL important vocabulary—do not limit to a few. If the image has 10+ distinct words/phrases, include at least 5–10; if it has fewer, include every one. Prioritize: verbs, nouns, adjectives, and common collocations (e.g. verb+noun, adjective+noun).
+3. For each word/phrase you include, provide:
+   - word: the target word or phrase (exactly as it appears or in base form)
    - collocations: exactly 3 items. Each item must have "phrase" (the English collocation) and "meaningKo" (short Korean meaning, e.g. "정확한 측정" for "precise measurements").
    - examples: exactly 2 natural, realistic example sentences that a native might say or write (using the word or its collocations)
+
+Important: Do not omit any English vocabulary that appears in the image. Prefer more entries over fewer when the image contains many words.
 
 Respond only with valid JSON in this exact shape, no markdown or extra text:
 {
@@ -128,7 +130,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       response_format: { type: "json_object" },
-      max_tokens: 4096,
+      max_tokens: 8192,
     });
 
     const raw = completion.choices[0]?.message?.content;
