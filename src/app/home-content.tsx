@@ -59,6 +59,9 @@ export function HomeContent() {
               만들어 드립니다.
             </p>
           </div>
+          <p className="text-base text-muted-foreground">
+            매일 조금씩 성장하는 예윤을 응원합니다.
+          </p>
           <ImageDropzone
             onFilesAccepted={handleFilesAccepted}
             disabled={status === "loading"}

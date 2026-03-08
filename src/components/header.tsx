@@ -17,7 +17,7 @@ export function Header({ user }: HeaderProps) {
           href="/"
           className="flex items-center gap-2 font-semibold text-foreground hover:text-primary transition-colors"
         >
-          <span className="text-lg">WordSnap</span>
+          <span className="text-lg">WordSnap by 예윤대디</span>
         </Link>
         <nav className="flex items-center gap-2">
           {user ? (
