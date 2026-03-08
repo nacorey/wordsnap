@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import type { VocabularyWithScan, CollocationDisplay } from "./vocabulary-card";
 import { Button } from "@/components/ui/button";
 
@@ -26,12 +27,34 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-/** 단답형: 영문 보여주고 한글 뜻 쓰기 */
-type QuizItem = {
-  word: string;
-  phrase: string; // 영문 콜로케이션
-  answer: string; // 한글 뜻 (정답)
-};
+function escapeHtml(s: string): string {
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+/** 나눔고딕 폰트 로드 후 resolve */
+function ensureNanumGothic(): Promise<void> {
+  const id = "pdf-nanum-gothic";
+  if (document.getElementById(id)) return document.fonts.ready;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = "https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&display=swap";
+  document.head.appendChild(link);
+  return new Promise((resolve) => {
+    link.onload = () => document.fonts.ready.then(() => resolve());
+    link.onerror = () => resolve();
+    setTimeout(resolve, 1500);
+  });
+}
+
+/** 단답형: 영문 보여주고 한글 뜻 쓰기. 정답은 PDF에 포함하지 않음 */
+type QuizItem = { word: string; phrase: string; answer: string };
+
+const A4_MM = { w: 210, h: 297 };
+const SCALE = 2;
+const A4_HEIGHT_PX = Math.round((A4_MM.h / 25.4) * 96 * SCALE);
 
 export function QuizPdfSection({
   vocabularies,
@@ -41,7 +64,7 @@ export function QuizPdfSection({
   const [count, setCount] = useState(5);
   const [loading, setLoading] = useState(false);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const withMeaning = vocabularies
       .map((v) => ({ item: v, list: getPhrasesWithMeaning(v).filter((x) => x.meaningKo.length > 0) }))
       .filter((x) => x.list.length >= 1);
@@ -54,54 +77,84 @@ export function QuizPdfSection({
     );
     const n = Math.min(Math.max(1, count), pool.length);
     const shuffled = shuffle(pool).slice(0, n);
-    const quizItems: QuizItem[] = shuffled.map((x) => ({
-      word: x.word,
-      phrase: x.phrase,
-      answer: x.answer,
-    }));
+    const quizItems: QuizItem[] = shuffled.map((x) => ({ word: x.word, phrase: x.phrase, answer: x.answer }));
 
     setLoading(true);
+    let container: HTMLDivElement | null = null;
     try {
+      await ensureNanumGothic();
+
+      container = document.createElement("div");
+      container.style.cssText = [
+        "position:fixed",
+        "left:-9999px",
+        "top:0",
+        "width:794px",
+        "background:#fff",
+        "font-family:'Nanum Gothic',sans-serif",
+        "padding:24px",
+        "box-sizing:border-box",
+      ].join(";");
+
+      const title = document.createElement("h1");
+      title.textContent = "WordSnap 퀴즈";
+      title.style.cssText = "margin:0 0 20px 0; font-size:22px; font-weight:bold;";
+      container.appendChild(title);
+
+      const grid = document.createElement("div");
+      grid.style.cssText =
+        "display:grid; grid-template-columns: 1fr 1fr; gap: 28px 32px; margin-top: 8px;";
+      quizItems.forEach((q, i) => {
+        const cell = document.createElement("div");
+        cell.style.cssText = "font-size: 13px; line-height: 1.5;";
+        cell.innerHTML = [
+          `<strong>Q${i + 1}. [${escapeHtml(q.word)}]</strong>`,
+          escapeHtml(q.phrase),
+          "한글 뜻: _______________________",
+        ].join("<br/>");
+        grid.appendChild(cell);
+      });
+      container.appendChild(grid);
+      document.body.appendChild(container);
+
+      const canvas = await html2canvas(container, {
+        scale: SCALE,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+      if (container.parentNode) container.parentNode.removeChild(container);
+      container = null;
+
       const doc = new jsPDF({ unit: "mm" });
-      const margin = 20;
-      const lineHeight = 7;
-      let y = 20;
+      const imgW = canvas.width;
+      const imgH = canvas.height;
+      const wMm = A4_MM.w;
+      let drawn = 0;
 
-      doc.setFontSize(16);
-      doc.text("WordSnap 퀴즈", margin, y);
-      y += lineHeight * 2;
-
-      doc.setFontSize(11);
-      quizItems.forEach((q, i) => {
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
+      while (drawn < imgH) {
+        if (drawn > 0) doc.addPage();
+        const sliceH = Math.min(A4_HEIGHT_PX, imgH - drawn);
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = imgW;
+        sliceCanvas.height = sliceH;
+        const ctx = sliceCanvas.getContext("2d");
+        if (ctx) {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, imgW, sliceH);
+          ctx.drawImage(canvas, 0, drawn, imgW, sliceH, 0, 0, imgW, sliceH);
         }
-        doc.setFont("helvetica", "bold");
-        doc.text(`Q${i + 1}. [${q.word}]`, margin, y);
-        y += lineHeight;
-        doc.setFont("helvetica", "normal");
-        doc.text(`   ${q.phrase}`, margin, y);
-        y += lineHeight + 2;
-        doc.text("   한글 뜻: _______________________", margin, y);
-        y += lineHeight * 1.5;
-      });
-
-      if (y > 250) {
-        doc.addPage();
-        y = 20;
+        const hMm = (sliceH / imgW) * wMm;
+        doc.addImage(sliceCanvas.toDataURL("image/png"), "PNG", 0, 0, wMm, hMm);
+        drawn += sliceH;
       }
-      doc.setFont("helvetica", "bold");
-      doc.text("정답", margin, y);
-      y += lineHeight;
-      doc.setFont("helvetica", "normal");
-      quizItems.forEach((q, i) => {
-        doc.text(`Q${i + 1}: ${q.answer}`, margin, y);
-        y += lineHeight;
-      });
 
       doc.save("wordsnap-quiz.pdf");
+    } catch (err) {
+      console.error("PDF 생성 실패:", err);
+      alert("PDF 생성 중 오류가 났습니다. 다시 시도해 주세요.");
     } finally {
+      if (container?.parentNode) container.parentNode.removeChild(container);
       setLoading(false);
     }
   };
