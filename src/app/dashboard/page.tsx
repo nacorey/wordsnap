@@ -48,16 +48,17 @@ export default async function DashboardPage() {
           </p>
         </section>
 
-        {/* 업로드 섹션 */}
-        <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
-          <h2 className="mb-4 text-base font-semibold text-foreground">
-            새 단어 추가
-          </h2>
-          <DashboardUpload />
-        </section>
+        {/* 단어 추가 + 퀴즈 만들기 (2단 그리드) */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
+            <h2 className="mb-4 text-base font-semibold text-foreground">
+              새 단어 추가
+            </h2>
+            <DashboardUpload />
+          </section>
 
-        {/* 퀴즈 */}
-        <QuizPdfSection vocabularies={vocabularies} />
+          <QuizPdfSection vocabularies={vocabularies} />
+        </div>
 
         {/* 저장된 단어 */}
         <section>
@@ -75,7 +76,7 @@ export default async function DashboardPage() {
           {vocabularies.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-border bg-muted/20 px-4 py-12 text-center">
               <p className="text-sm text-muted-foreground">
-                아직 저장된 단어가 없습니다. 위에서 이미지를 업로드해 보세요.
+                아직 저장된 단어가 없습니다. 위에서 단어를 추가해 보세요.
               </p>
             </div>
           ) : (

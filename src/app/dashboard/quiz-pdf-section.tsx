@@ -170,12 +170,9 @@ export function QuizPdfSection({
     }
   };
 
-  if (vocabularies.length === 0) return null;
-
   const maxCount = vocabularies.flatMap((v) =>
     getPhrasesWithMeaning(v).filter((x) => x.meaningKo.length > 0)
   ).length;
-  if (maxCount === 0) return null;
 
   return (
     <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
@@ -185,41 +182,49 @@ export function QuizPdfSection({
           퀴즈 만들기
         </h2>
       </div>
-      <p className="mb-4 text-sm text-muted-foreground">
-        영문 콜로케이션을 보여주고 한글 뜻을 쓰는 단답형 퀴즈입니다. (최대 {maxCount}문제)
-      </p>
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">퀴즈 개수</span>
-          <input
-            type="number"
-            min={1}
-            max={maxCount}
-            value={count}
-            onChange={(e) => setCount(Math.min(maxCount, Math.max(1, parseInt(e.target.value, 10) || 1)))}
-            className="w-16 rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm transition-colors focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-ring/30"
-          />
-        </label>
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleDownload}
-          disabled={loading}
-          className="gap-1.5"
-        >
-          {loading ? (
-            <>
-              <div className="size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              생성 중...
-            </>
-          ) : (
-            <>
-              <FileDown className="size-3.5" />
-              PDF 다운로드
-            </>
-          )}
-        </Button>
-      </div>
+      {maxCount === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          저장된 단어가 있으면 콜로케이션 퀴즈를 PDF로 만들 수 있습니다.
+        </p>
+      ) : (
+        <>
+          <p className="mb-4 text-sm text-muted-foreground">
+            영문 콜로케이션을 보여주고 한글 뜻을 쓰는 단답형 퀴즈입니다. (최대 {maxCount}문제)
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">퀴즈 개수</span>
+              <input
+                type="number"
+                min={1}
+                max={maxCount}
+                value={count}
+                onChange={(e) => setCount(Math.min(maxCount, Math.max(1, parseInt(e.target.value, 10) || 1)))}
+                className="w-16 rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm transition-colors focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-ring/30"
+              />
+            </label>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleDownload}
+              disabled={loading}
+              className="gap-1.5"
+            >
+              {loading ? (
+                <>
+                  <div className="size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                  생성 중...
+                </>
+              ) : (
+                <>
+                  <FileDown className="size-3.5" />
+                  PDF 다운로드
+                </>
+              )}
+            </Button>
+          </div>
+        </>
+      )}
     </section>
   );
 }
