@@ -99,7 +99,7 @@ export function QuizPdfSection({
           (q, i) =>
             `<div style="font-size:13px;line-height:1.5;color:#111;">` +
             `<strong>Q${i + 1}. [${escapeHtml(q.word)}]</strong><br/>` +
-            `${escapeHtml(q.phrase)}<br/>한글 뜻: _______________________</div>`
+            `${escapeHtml(q.phrase)}<br/>_______________________</div>`
         )
         .join("");
 
@@ -159,7 +159,11 @@ export function QuizPdfSection({
         drawn += sliceH;
       }
 
-      pdfDoc.save("wordsnap-quiz.pdf");
+      const now = new Date();
+      const yy = String(now.getFullYear()).slice(2);
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      pdfDoc.save(`wordsnap-quiz_${yy}${mm}${dd}.pdf`);
     } catch (err) {
       console.error("PDF 생성 실패:", err);
       const msg = err instanceof Error ? err.message : String(err);
