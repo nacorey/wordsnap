@@ -3,6 +3,7 @@
 import { useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { cn } from "@/lib/utils";
+import { ImagePlus, ClipboardPaste } from "lucide-react";
 
 const ACCEPTED_IMAGE_TYPES = {
   "image/jpeg": [".jpg", ".jpeg"],
@@ -60,39 +61,37 @@ export function ImageDropzone({
     <div
       {...getRootProps()}
       className={cn(
-        "relative flex min-h-[280px] w-full max-w-lg cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors",
-        "border-input bg-muted/30 hover:bg-muted/50 hover:border-primary/50",
+        "group relative flex min-h-[220px] w-full max-w-lg cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed transition-all duration-200",
+        "border-border bg-card hover:border-primary/40 hover:bg-primary/[0.02] hover:shadow-sm",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        isDragActive && "border-primary bg-primary/5",
+        isDragActive && "border-primary bg-primary/5 shadow-md shadow-primary/10",
         disabled && "cursor-not-allowed opacity-50",
         className
       )}
     >
       <input {...getInputProps()} aria-label="이미지 업로드" />
-      <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
-        <svg
-          className="size-12 text-muted-foreground"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
-        <p className="text-sm font-medium">
-          {isDragActive
-            ? "여기에 놓으세요"
-            : "이미지를 끌어다 놓거나 클릭하여 선택"}
-        </p>
-        <p className="text-xs">JPG, PNG, WebP, GIF (최대 10MB)</p>
-        <p className="text-xs text-muted-foreground/80">
-          캡처한 경우 Ctrl+V로 붙여넣기 가능
-        </p>
+      <div className="flex flex-col items-center gap-3 text-center text-muted-foreground">
+        <div className={cn(
+          "flex size-12 items-center justify-center rounded-xl bg-primary/10 transition-colors",
+          "group-hover:bg-primary/15",
+          isDragActive && "bg-primary/20"
+        )}>
+          <ImagePlus className="size-6 text-primary" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground/80">
+            {isDragActive
+              ? "여기에 놓으세요"
+              : "이미지를 끌어다 놓거나 클릭"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            JPG, PNG, WebP, GIF (최대 10MB)
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+          <ClipboardPaste className="size-3" />
+          <span>Ctrl+V 붙여넣기 가능</span>
+        </div>
       </div>
     </div>
   );

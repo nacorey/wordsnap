@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import { ImageDropzone } from "@/components/image-dropzone";
+import { Sparkles } from "lucide-react";
 
 export function HomeContent() {
   const router = useRouter();
@@ -48,31 +49,41 @@ export function HomeContent() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header user={null} />
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-8">
-        <section className="flex w-full max-w-2xl flex-col items-center gap-6 text-center">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              이미지를 업로드하세요
+      <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
+        <section className="flex w-full max-w-2xl flex-col items-center gap-8 text-center">
+          <div className="space-y-3">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10">
+              <Sparkles className="size-7 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              보는 즉시,{" "}
+              <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                내 단어가 되는
+              </span>
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              책이나 뉴스레터를 촬영·캡처하면 AI가 핵심 단어와 콜로케이션을
-              만들어 드립니다.
+            <p className="mx-auto max-w-md text-base text-muted-foreground">
+              책이나 뉴스레터를 촬영하면 AI가 핵심 단어와
+              원어민 콜로케이션을 만들어 드립니다.
             </p>
           </div>
-          <p className="text-base text-muted-foreground">
+
+          <p className="text-sm text-muted-foreground/80">
             매일 조금씩 성장하는 예윤을 응원합니다.
           </p>
+
           <ImageDropzone
             onFilesAccepted={handleFilesAccepted}
             disabled={status === "loading"}
           />
+
           {status === "loading" && (
-            <p className="text-center text-sm text-muted-foreground">
-              이미지 분석 중…
-            </p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              이미지 분석 중...
+            </div>
           )}
           {status === "error" && errorMessage && (
-            <p className="text-center text-sm text-destructive">
+            <p className="rounded-lg bg-destructive/10 px-4 py-2 text-center text-sm text-destructive">
               {errorMessage} (상단에서 Google 로그인 후 다시 시도해 주세요.)
             </p>
           )}

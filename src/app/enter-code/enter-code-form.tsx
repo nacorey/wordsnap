@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 
 export function EnterCodeForm() {
   const router = useRouter();
@@ -52,8 +53,8 @@ export function EnterCodeForm() {
         type="text"
         value={code}
         onChange={(e) => setCode(e.target.value)}
-        placeholder="가입 코드"
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-center text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        placeholder="가입 코드를 입력하세요"
+        className="w-full rounded-xl border border-input bg-background px-4 py-3 text-center text-sm tracking-widest transition-colors placeholder:text-muted-foreground placeholder:tracking-normal focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-ring/30"
         disabled={status === "loading"}
         autoComplete="off"
       />
@@ -62,10 +63,20 @@ export function EnterCodeForm() {
         className="w-full"
         disabled={status === "loading"}
       >
-        {status === "loading" ? "확인 중…" : "확인"}
+        {status === "loading" ? (
+          <div className="flex items-center gap-2">
+            <div className="size-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+            확인 중...
+          </div>
+        ) : (
+          "확인"
+        )}
       </Button>
       {status === "error" && message && (
-        <p className="text-sm text-destructive">{message}</p>
+        <p className="flex items-center justify-center gap-1.5 text-sm text-destructive">
+          <AlertCircle className="size-3.5" />
+          {message}
+        </p>
       )}
     </form>
   );

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImageDropzone } from "@/components/image-dropzone";
 import { Button } from "@/components/ui/button";
+import { Send, Check, AlertCircle } from "lucide-react";
 
 export function DashboardUpload() {
   const router = useRouter();
@@ -36,9 +37,8 @@ export function DashboardUpload() {
         return;
       }
       setImgStatus("success");
-      setImgMessage("저장되었습니다. 목록을 불러오는 중…");
-      router.refresh();
       setImgMessage("저장되었습니다.");
+      router.refresh();
     } catch {
       setImgStatus("error");
       setImgMessage("요청 중 오류가 발생했습니다.");
@@ -82,34 +82,28 @@ export function DashboardUpload() {
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <div className="space-y-2">
+      {/* 이미지 업로드 */}
+      <div className="space-y-3">
         <p className="text-sm font-medium text-foreground">이미지로 추가</p>
         <ImageDropzone
           onFilesAccepted={handleFilesAccepted}
           disabled={imgStatus === "loading"}
         />
-        {imgStatus === "loading" && (
-          <p className="text-sm text-muted-foreground">이미지 분석 중…</p>
-        )}
-        {imgStatus === "success" && imgMessage && (
-          <p className="text-sm text-primary">{imgMessage}</p>
-        )}
-        {imgStatus === "error" && imgMessage && (
-          <p className="text-sm text-destructive">{imgMessage}</p>
-        )}
+        <StatusMessage status={imgStatus} message={imgMessage} />
       </div>
 
-      <div className="space-y-2">
+      {/* 단어 직접 입력 */}
+      <div className="space-y-3">
         <p className="text-sm font-medium text-foreground">단어로 추가</p>
         <p className="text-xs text-muted-foreground">
-          단어를 입력하면 AI가 콜로케이션과 예문을 만들어 저장합니다. (줄바꿈 또는 쉼표로 구분)
+          단어를 입력하면 AI가 콜로케이션과 예문을 만들어 저장합니다.
         </p>
         <textarea
           value={wordInput}
           onChange={(e) => setWordInput(e.target.value)}
           placeholder="예: precise, measurement, accurate"
           rows={5}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm transition-colors placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-ring/30"
           disabled={wordStatus === "loading"}
         />
         <Button
@@ -117,16 +111,56 @@ export function DashboardUpload() {
           size="sm"
           onClick={handleWordsSubmit}
           disabled={wordStatus === "loading"}
+          className="gap-1.5"
         >
-          {wordStatus === "loading" ? "처리 중…" : "단어 추가"}
+          {wordStatus === "loading" ? (
+            <>
+              <div className="size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+              처리 중...
+            </>
+          ) : (
+            <>
+              <Send className="size-3.5" />
+              단어 추가
+            </>
+          )}
         </Button>
-        {wordStatus === "success" && wordMessage && (
-          <p className="text-sm text-primary">{wordMessage}</p>
-        )}
-        {wordStatus === "error" && wordMessage && (
-          <p className="text-sm text-destructive">{wordMessage}</p>
-        )}
+        <StatusMessage status={wordStatus} message={wordMessage} />
       </div>
     </div>
   );
+}
+
+function StatusMessage({
+  status,
+  message,
+}: {
+  status: "idle" | "loading" | "success" | "error";
+  message: string;
+}) {
+  if (status === "loading" && !message) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="size-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        분석 중...
+      </div>
+    );
+  }
+  if (status === "success" && message) {
+    return (
+      <p className="flex items-center gap-1.5 text-sm text-success">
+        <Check className="size-3.5" />
+        {message}
+      </p>
+    );
+  }
+  if (status === "error" && message) {
+    return (
+      <p className="flex items-center gap-1.5 text-sm text-destructive">
+        <AlertCircle className="size-3.5" />
+        {message}
+      </p>
+    );
+  }
+  return null;
 }

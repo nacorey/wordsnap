@@ -23,11 +23,6 @@ export type VocabularyWithScan = {
   scans: ScanInfo | ScanInfo[] | null;
 };
 
-function formatCollocation(c: CollocationDisplay): string {
-  if (typeof c === "string") return c;
-  return c.meaningKo ? `${c.phrase} ${c.meaningKo}` : c.phrase;
-}
-
 function getScan(item: VocabularyWithScan): ScanInfo | null {
   const s = item.scans;
   if (!s) return null;
@@ -47,38 +42,41 @@ export function VocabularyCard({ item }: { item: VocabularyWithScan }) {
     : null;
 
   return (
-    <Card className="overflow-hidden transition-shadow hover:shadow-md">
+    <Card className="group overflow-hidden border-border/60 transition-all duration-200 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5">
       <CardHeader className="pb-2">
         <div className="flex items-baseline justify-between gap-2">
-          <CardTitle className="text-lg font-semibold text-primary">
+          <CardTitle className="text-lg font-bold text-primary">
             {item.word}
           </CardTitle>
           {date && (
-            <span className="text-xs text-muted-foreground">{date}</span>
+            <span className="shrink-0 text-[11px] text-muted-foreground">{date}</span>
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
         {collocations.length > 0 && (
           <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
               Collocations
             </p>
-            <ul className="list-inside list-disc space-y-0.5 text-sm">
+            <div className="space-y-1">
               {collocations.map((c, i) => (
-                <li key={i}>{formatCollocation(c)}</li>
+                <CollocationRow key={i} collocation={c} />
               ))}
-            </ul>
+            </div>
           </div>
         )}
         {examples.length > 0 && (
           <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
               Examples
             </p>
-            <ul className="space-y-1 text-sm text-foreground/90">
+            <ul className="space-y-1.5">
               {examples.map((e, i) => (
-                <li key={i} className="border-l-2 border-primary/20 pl-2">
+                <li
+                  key={i}
+                  className="rounded-lg bg-muted/50 px-3 py-2 text-[13px] leading-relaxed text-foreground/85"
+                >
                   {e}
                 </li>
               ))}
@@ -87,5 +85,23 @@ export function VocabularyCard({ item }: { item: VocabularyWithScan }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function CollocationRow({ collocation }: { collocation: CollocationDisplay }) {
+  if (typeof collocation === "string") {
+    return (
+      <div className="rounded-md bg-primary/[0.06] px-2.5 py-1.5 text-sm">
+        {collocation}
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-baseline gap-2 rounded-md bg-primary/[0.06] px-2.5 py-1.5 text-sm">
+      <span className="font-medium text-foreground">{collocation.phrase}</span>
+      {collocation.meaningKo && (
+        <span className="text-xs text-muted-foreground">{collocation.meaningKo}</span>
+      )}
+    </div>
   );
 }
