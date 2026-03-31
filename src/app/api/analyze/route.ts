@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     const scanId = scanRow.id;
 
     const completion = await openai.chat.completions.create({
-      model: "meta-llama/llama-3.3-70b-instruct:free",
+      model: "qwen/qwen3.6-plus-preview:free",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
