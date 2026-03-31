@@ -54,17 +54,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.XAI_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "XAI_API_KEY is not configured." },
+        { error: "OPENROUTER_API_KEY is not configured." },
         { status: 500 }
       );
     }
 
     const openai = new OpenAI({
       apiKey,
-      baseURL: "https://api.x.ai/v1",
+      baseURL: "https://openrouter.ai/api/v1",
     });
 
     const formData = await request.formData();
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     const scanId = scanRow.id;
 
     const completion = await openai.chat.completions.create({
-      model: "grok-4-1-fast",
+      model: "qwen/qwen3.6-plus-preview:free",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {

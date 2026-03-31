@@ -18,7 +18,7 @@ npm run lint     # ESLint (next/core-web-vitals + next/typescript)
 
 ## Tech Stack
 
-Next.js 14 (App Router, `src/`) · Supabase (Auth + PostgreSQL + Storage) · xAI Grok (grok-4-1-fast) · Tailwind CSS + shadcn/ui · html2canvas + jsPDF · Noto Sans KR (앱) + Nanum Gothic (PDF)
+Next.js 14 (App Router, `src/`) · Supabase (Auth + PostgreSQL + Storage) · OpenRouter (qwen/qwen3.6-plus-preview:free) · Tailwind CSS + shadcn/ui · html2canvas + jsPDF · Noto Sans KR (앱) + Nanum Gothic (PDF)
 
 ## Architecture
 
@@ -93,7 +93,7 @@ invite_codes / allowed_users (초대 코드 접근 제어, redeem_code RPC로만
 `.env.example` 참고:
 
 ```
-XAI_API_KEY=xai-...
+OPENROUTER_API_KEY=sk-or-v1-...
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 ```

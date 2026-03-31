@@ -45,10 +45,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.XAI_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "XAI_API_KEY is not configured." },
+        { error: "OPENROUTER_API_KEY is not configured." },
         { status: 500 }
       );
     }
@@ -75,12 +75,12 @@ export async function POST(request: NextRequest) {
 
     const openai = new OpenAI({
       apiKey,
-      baseURL: "https://api.x.ai/v1",
+      baseURL: "https://openrouter.ai/api/v1",
     });
     const prompt = `For each of these words, provide collocations and examples as specified: ${wordsList.join(", ")}`;
 
     const completion = await openai.chat.completions.create({
-      model: "grok-4-1-fast",
+      model: "qwen/qwen3.6-plus-preview:free",
       messages: [
         { role: "system", content: WORDS_SYSTEM_PROMPT },
         { role: "user", content: prompt },
