@@ -45,9 +45,12 @@ export function DashboardClient({
         body: JSON.stringify({ ids: Array.from(selectedIds) }),
         credentials: "include",
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setSelectedIds(new Set());
         router.refresh();
+      } else {
+        alert(data?.error ?? "삭제에 실패했습니다.");
       }
     } finally {
       setDeleting(false);

@@ -22,14 +22,22 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "ids 배열을 보내주세요." }, { status: 400 });
   }
 
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from("vocabularies")
     .delete()
-    .in("id", ids);
+    .in("id", ids)
+    .select("id");
 
   if (error) {
     return NextResponse.json({ error: "삭제 실패", detail: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ deleted: ids.length });
+  if (!deleted || deleted.length === 0) {
+    return NextResponse.json(
+      { error: "삭제되지 않았습니다. Supabase에 DELETE RLS 정책을 추가하세요." },
+      { status: 403 }
+    );
+  }
+
+  return NextResponse.json({ deleted: deleted.length });
 }
