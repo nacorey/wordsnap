@@ -196,9 +196,19 @@ export async function POST(request: NextRequest) {
       })
       .filter((w): w is AnalyzeWordItem => w !== null);
 
-    // 3) vocabularies 테이블에 단어별 저장 (data: { collocations, examples })
-    if (words.length > 0) {
-      const rows = words.map((w) => ({
+    // 3) 기존 단어 조회 (case-insensitive 중복 체크)
+    const { data: existingRows } = await supabase
+      .from("vocabularies")
+      .select("word");
+    const existingWords = new Set(
+      (existingRows ?? []).map((r: { word: string }) => r.word.toLowerCase())
+    );
+
+    const newWords = words.filter((w) => !existingWords.has(w.word.toLowerCase()));
+
+    // 4) vocabularies 테이블에 새 단어만 저장
+    if (newWords.length > 0) {
+      const rows = newWords.map((w) => ({
         scan_id: scanId,
         word: w.word,
         data: { collocations: w.collocations, examples: w.examples },
@@ -208,12 +218,10 @@ export async function POST(request: NextRequest) {
         .insert(rows);
       if (vocabError) {
         console.error("[api/analyze] Vocabularies insert failed:", vocabError);
-        // 저장 실패해도 분석 결과는 반환
       }
     }
 
-    // 응답: { word, collocations, examples }를 포함한 JSON 배열
-    return NextResponse.json(words satisfies AnalyzeWordItem[]);
+    return NextResponse.json({ words: newWords, skippedCount: words.length - newWords.length });
   } catch (err) {
     console.error("[api/analyze]", err);
     const message = err instanceof Error ? err.message : "Analysis failed.";

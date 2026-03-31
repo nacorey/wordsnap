@@ -37,7 +37,15 @@ export function DashboardUpload() {
         return;
       }
       setWordStatus("success");
-      setWordMessage(`${Array.isArray(data) ? data.length : list.length}개 단어 저장됨.`);
+      const saved = data.words?.length ?? 0;
+      const skipped = data.skippedCount ?? 0;
+      if (skipped > 0 && saved > 0) {
+        setWordMessage(`${saved}개 저장됨. (${skipped}개는 이미 존재)`);
+      } else if (skipped > 0 && saved === 0) {
+        setWordMessage(`모두 이미 저장된 단어입니다.`);
+      } else {
+        setWordMessage(`${saved}개 단어 저장됨.`);
+      }
       setWordInput("");
       router.refresh();
     } catch {

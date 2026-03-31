@@ -140,21 +140,32 @@ export async function POST(request: NextRequest) {
       })
       .filter((w): w is AnalyzeWordItem => w !== null);
 
-    const { data: scanRow, error: scanError } = await supabase
-      .from("scans")
-      .insert({ user_id: user.id, image_url: "" })
-      .select("id")
-      .single();
-    if (scanError || !scanRow) {
-      console.error("[api/words] Scan insert failed:", scanError);
-      return NextResponse.json(
-        { error: "저장에 실패했습니다." },
-        { status: 500 }
-      );
-    }
+    // 기존 단어 조회 (case-insensitive 중복 체크)
+    const { data: existingRows } = await supabase
+      .from("vocabularies")
+      .select("word");
+    const existingWords = new Set(
+      (existingRows ?? []).map((r: { word: string }) => r.word.toLowerCase())
+    );
 
-    if (words.length > 0) {
-      const rows = words.map((w) => ({
+    const newWords = words.filter((w) => !existingWords.has(w.word.toLowerCase()));
+    const skippedCount = words.length - newWords.length;
+
+    if (newWords.length > 0) {
+      const { data: scanRow, error: scanError } = await supabase
+        .from("scans")
+        .insert({ user_id: user.id, image_url: "" })
+        .select("id")
+        .single();
+      if (scanError || !scanRow) {
+        console.error("[api/words] Scan insert failed:", scanError);
+        return NextResponse.json(
+          { error: "저장에 실패했습니다." },
+          { status: 500 }
+        );
+      }
+
+      const rows = newWords.map((w) => ({
         scan_id: scanRow.id,
         word: w.word,
         data: { collocations: w.collocations, examples: w.examples },
@@ -171,7 +182,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(words);
+    return NextResponse.json({ words: newWords, skippedCount });
   } catch (err) {
     console.error("[api/words]", err);
     const message = err instanceof Error ? err.message : "Failed.";

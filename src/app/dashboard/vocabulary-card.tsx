@@ -75,7 +75,7 @@ export function VocabularyCard({
               )}
             </div>
           )}
-          <CardTitle className="flex-1 text-lg font-bold text-primary">
+          <CardTitle className="flex-1 text-lg font-bold uppercase text-primary">
             {item.word}
           </CardTitle>
           {date && (
