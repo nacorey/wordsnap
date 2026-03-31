@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { BookOpen, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { DashboardUpload } from "./dashboard-upload";
 import { QuizPdfSection } from "./quiz-pdf-section";
 import { VocabularyCard, type VocabularyWithScan } from "./vocabulary-card";
@@ -11,7 +13,9 @@ export function DashboardClient({
 }: {
   vocabularies: VocabularyWithScan[];
 }) {
+  const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   const toggle = (id: string) => {
     setSelectedIds((prev) => {
@@ -27,6 +31,26 @@ export function DashboardClient({
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(vocabularies.map((v) => v.id)));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`${selectedIds.size}개 단어를 삭제할까요?`)) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/vocabularies", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+        credentials: "include",
+      });
+      if (res.ok) {
+        setSelectedIds(new Set());
+        router.refresh();
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -75,9 +99,22 @@ export function DashboardClient({
           )}
         </div>
         {selectedIds.size > 0 && (
-          <p className="mb-3 text-xs text-primary">
-            {selectedIds.size}개 선택됨 — 퀴즈에 선택한 단어만 포함됩니다.
-          </p>
+          <div className="mb-3 flex items-center gap-3">
+            <p className="text-xs text-primary">
+              {selectedIds.size}개 선택됨
+            </p>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="h-7 gap-1 px-2.5 text-xs"
+            >
+              <Trash2 className="size-3" />
+              {deleting ? "삭제 중..." : "선택 삭제"}
+            </Button>
+          </div>
         )}
         {vocabularies.length === 0 ? (
           <div className="rounded-2xl border-2 border-dashed border-border bg-muted/20 px-4 py-12 text-center">
