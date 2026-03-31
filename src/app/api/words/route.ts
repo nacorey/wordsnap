@@ -45,10 +45,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "OPENROUTER_API_KEY is not configured." },
+        { error: "GOOGLE_AI_API_KEY is not configured." },
         { status: 500 }
       );
     }
@@ -75,12 +75,12 @@ export async function POST(request: NextRequest) {
 
     const openai = new OpenAI({
       apiKey,
-      baseURL: "https://openrouter.ai/api/v1",
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     });
     const prompt = `For each of these words, provide collocations and examples as specified: ${wordsList.join(", ")}`;
 
     const completion = await openai.chat.completions.create({
-      model: "qwen/qwen3.6-plus-preview:free",
+      model: "gemini-2.0-flash",
       messages: [
         { role: "system", content: WORDS_SYSTEM_PROMPT },
         { role: "user", content: prompt },
