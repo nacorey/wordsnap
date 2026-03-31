@@ -54,17 +54,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    const apiKey = process.env.XAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "GOOGLE_AI_API_KEY is not configured." },
+        { error: "XAI_API_KEY is not configured." },
         { status: 500 }
       );
     }
 
     const openai = new OpenAI({
       apiKey,
-      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+      baseURL: "https://api.x.ai/v1",
     });
 
     const formData = await request.formData();
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     const scanId = scanRow.id;
 
     const completion = await openai.chat.completions.create({
-      model: "gemini-2.0-flash",
+      model: "grok-4-1-fast",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
