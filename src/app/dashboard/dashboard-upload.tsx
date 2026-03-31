@@ -69,7 +69,7 @@ export function DashboardUpload() {
         {wordStatus === "loading" ? (
           <>
             <div className="size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-            처리 중...
+            분석 중...
           </>
         ) : (
           <>
@@ -94,7 +94,7 @@ function StatusMessage({
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <div className="size-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        처리 중...
+        AI가 콜로케이션과 예문을 생성하고 있어요...
       </div>
     );
   }

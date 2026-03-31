@@ -29,7 +29,15 @@ function getScan(item: VocabularyWithScan): ScanInfo | null {
   return Array.isArray(s) ? s[0] ?? null : s;
 }
 
-export function VocabularyCard({ item }: { item: VocabularyWithScan }) {
+export function VocabularyCard({
+  item,
+  selected,
+  onToggle,
+}: {
+  item: VocabularyWithScan;
+  selected?: boolean;
+  onToggle?: () => void;
+}) {
   const collocations = item.data?.collocations ?? [];
   const examples = item.data?.examples ?? [];
   const scan = getScan(item);
@@ -42,10 +50,32 @@ export function VocabularyCard({ item }: { item: VocabularyWithScan }) {
     : null;
 
   return (
-    <Card className="group overflow-hidden border-border/60 transition-all duration-200 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5">
+    <Card
+      className={`group overflow-hidden transition-all duration-200 hover:shadow-md hover:shadow-primary/5 ${
+        selected
+          ? "border-primary/50 bg-primary/[0.03] ring-1 ring-primary/20"
+          : "border-border/60 hover:border-primary/30"
+      } ${onToggle ? "cursor-pointer" : ""}`}
+      onClick={onToggle}
+    >
       <CardHeader className="pb-2">
-        <div className="flex items-baseline justify-between gap-2">
-          <CardTitle className="text-lg font-bold text-primary">
+        <div className="flex items-center justify-between gap-2">
+          {onToggle && (
+            <div
+              className={`flex size-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+                selected
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-muted-foreground/30"
+              }`}
+            >
+              {selected && (
+                <svg className="size-3" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+          )}
+          <CardTitle className="flex-1 text-lg font-bold text-primary">
             {item.word}
           </CardTitle>
           {date && (

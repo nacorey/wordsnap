@@ -59,8 +59,10 @@ const A4_HEIGHT_PX = Math.round((A4_MM.h / 25.4) * 96 * SCALE);
 
 export function QuizPdfSection({
   vocabularies,
+  selectedCount = 0,
 }: {
   vocabularies: VocabularyWithScan[];
+  selectedCount?: number;
 }) {
   const [count, setCount] = useState(5);
   const [loading, setLoading] = useState(false);
@@ -73,9 +75,10 @@ export function QuizPdfSection({
       alert("한글 뜻이 저장된 콜로케이션이 없습니다. 새로 이미지를 분석하면 한글 뜻이 포함됩니다.");
       return;
     }
-    const pool = withMeaning.flatMap(({ item, list }) =>
-      list.map(({ phrase, meaningKo }) => ({ word: item.word, phrase, answer: meaningKo }))
-    );
+    const pool = withMeaning.map(({ item, list }) => {
+      const pick = list[Math.floor(Math.random() * list.length)];
+      return { word: item.word, phrase: pick.phrase, answer: pick.meaningKo };
+    });
     const n = Math.min(Math.max(1, count), pool.length);
     const shuffled = shuffle(pool).slice(0, n);
     const quizItems: QuizItem[] = shuffled.map((x) => ({ word: x.word, phrase: x.phrase, answer: x.answer }));
@@ -174,8 +177,8 @@ export function QuizPdfSection({
     }
   };
 
-  const maxCount = vocabularies.flatMap((v) =>
-    getPhrasesWithMeaning(v).filter((x) => x.meaningKo.length > 0)
+  const maxCount = vocabularies.filter((v) =>
+    getPhrasesWithMeaning(v).some((x) => x.meaningKo.length > 0)
   ).length;
 
   return (
@@ -193,7 +196,9 @@ export function QuizPdfSection({
       ) : (
         <>
           <p className="mb-4 text-sm text-muted-foreground">
-            영문 콜로케이션을 보여주고 한글 뜻을 쓰는 단답형 퀴즈입니다. (최대 {maxCount}문제)
+            {selectedCount > 0
+              ? `선택한 ${selectedCount}개 단어에서 퀴즈를 만듭니다. (최대 ${maxCount}문제)`
+              : `영문 콜로케이션을 보여주고 한글 뜻을 쓰는 단답형 퀴즈입니다. (최대 ${maxCount}문제)`}
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-sm">
