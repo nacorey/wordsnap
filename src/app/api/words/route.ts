@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const prompt = `For each of these words, provide collocations and examples as specified: ${wordsList.join(", ")}`;
 
     const completion = await openai.chat.completions.create({
-      model: "google/gemma-3-27b-it:free",
+      model: "meta-llama/llama-3.3-70b-instruct:free",
       messages: [
         { role: "system", content: WORDS_SYSTEM_PROMPT },
         { role: "user", content: prompt },
