@@ -54,15 +54,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "OPENAI_API_KEY is not configured." },
+        { error: "OPENROUTER_API_KEY is not configured." },
         { status: 500 }
       );
     }
 
-    const openai = new OpenAI({ apiKey });
+    const openai = new OpenAI({
+      apiKey,
+      baseURL: "https://openrouter.ai/api/v1",
+    });
 
     const formData = await request.formData();
     const file = formData.get("image") as File | null;
@@ -121,7 +124,7 @@ export async function POST(request: NextRequest) {
     const scanId = scanRow.id;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "google/gemma-3-27b-it:free",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
@@ -138,16 +141,21 @@ export async function POST(request: NextRequest) {
           ],
         },
       ],
-      response_format: { type: "json_object" },
       max_tokens: 8192,
     });
 
-    const raw = completion.choices[0]?.message?.content;
+    let raw = completion.choices[0]?.message?.content;
     if (!raw) {
       return NextResponse.json(
         { error: "No content in model response." },
         { status: 502 }
       );
+    }
+
+    // Strip markdown code block wrappers if present
+    raw = raw.trim();
+    if (raw.startsWith("```")) {
+      raw = raw.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
     }
 
     const parsed = JSON.parse(raw) as { words?: unknown[] };
