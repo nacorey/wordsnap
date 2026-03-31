@@ -85,33 +85,23 @@ export function VocabularyCard({
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
         {collocations.length > 0 && (
-          <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Collocations
-            </p>
-            <div className="space-y-1">
-              {collocations.map((c, i) => (
-                <CollocationRow key={i} collocation={c} />
-              ))}
-            </div>
+          <div className="space-y-1">
+            {collocations.map((c, i) => (
+              <CollocationRow key={i} collocation={c} />
+            ))}
           </div>
         )}
         {examples.length > 0 && (
-          <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Examples
-            </p>
-            <ul className="space-y-1.5">
-              {examples.map((e, i) => (
-                <li
-                  key={i}
-                  className="rounded-lg bg-muted/50 px-3 py-2 text-[13px] leading-relaxed text-foreground/85"
-                >
-                  {e}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul className="space-y-1.5">
+            {examples.map((e, i) => (
+              <li
+                key={i}
+                className="rounded-lg bg-muted/50 px-3 py-2 text-[13px] leading-relaxed text-foreground/85"
+              >
+                {e}
+              </li>
+            ))}
+          </ul>
         )}
       </CardContent>
     </Card>
