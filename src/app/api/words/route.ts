@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const prompt = `For each of these words, provide collocations and examples as specified: ${wordsList.join(", ")}`;
 
     const completion = await openai.chat.completions.create({
-      model: "qwen/qwen3.6-plus-preview:free",
+      model: "qwen/qwen3.6-plus:free",
       messages: [
         { role: "system", content: WORDS_SYSTEM_PROMPT },
         { role: "user", content: prompt },
