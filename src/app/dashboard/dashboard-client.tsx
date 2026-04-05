@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { BookOpen, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardUpload } from "./dashboard-upload";
+import { FlashcardSection } from "./flashcard-section";
 import { QuizPdfSection } from "./quiz-pdf-section";
 import { VocabularyCard, type VocabularyWithScan } from "./vocabulary-card";
 
@@ -73,10 +74,13 @@ export function DashboardClient({
           <DashboardUpload />
         </section>
 
-        <QuizPdfSection
-          vocabularies={quizVocabularies}
-          selectedCount={selectedIds.size}
-        />
+        <div className="flex flex-col gap-6">
+          <QuizPdfSection
+            vocabularies={quizVocabularies}
+            selectedCount={selectedIds.size}
+          />
+          <FlashcardSection vocabularies={vocabularies} />
+        </div>
       </div>
 
       {/* 저장된 단어 */}
