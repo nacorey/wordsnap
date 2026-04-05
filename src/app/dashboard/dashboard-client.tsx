@@ -79,7 +79,7 @@ export function DashboardClient({
             vocabularies={quizVocabularies}
             selectedCount={selectedIds.size}
           />
-          <FlashcardSection vocabularies={vocabularies} />
+          <FlashcardSection vocabularies={vocabularies} selectedIds={selectedIds} />
         </div>
       </div>
 
