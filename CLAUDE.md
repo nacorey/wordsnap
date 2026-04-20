@@ -18,7 +18,7 @@ npm run lint     # ESLint (next/core-web-vitals + next/typescript)
 
 ## Tech Stack
 
-Next.js 14 (App Router, `src/`) · Supabase (Auth + PostgreSQL + Storage) · OpenRouter (qwen/qwen3.6-plus-preview:free) · Tailwind CSS + shadcn/ui · html2canvas + jsPDF · Noto Sans KR (앱) + Nanum Gothic (PDF)
+Next.js 14 (App Router, `src/`) · Supabase (Auth + PostgreSQL + Storage) · OpenRouter (google/gemma-4-31b-it:free) · Tailwind CSS + shadcn/ui · html2canvas + jsPDF · Noto Sans KR (앱) + Nanum Gothic (PDF)
 
 ## Architecture
 
